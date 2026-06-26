@@ -1,7 +1,7 @@
 {
   "base": "usd",
   "date": "2026-06-25",
-  "fetched_at": "2026-06-26T06:20:38.884Z",
+  "fetched_at": "2026-06-26T08:27:50.838Z",
   "source": "https://github.com/fawazahmed0/exchange-api",
   "rates": {
     "1inch": 14.45643571,
