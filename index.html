@@ -37,14 +37,17 @@
               inputmode="decimal"
               autocomplete="off"
               spellcheck="false"
-              placeholder="e.g. 10万  ·  type w / y / z / k"
-              value="100万"
+              placeholder="e.g. 10万 · type w / y / z · k / m / b / t"
+              value="10"
             />
             <div class="shortcuts" role="group" aria-label="Insert unit">
               <button type="button" class="chip" data-unit="万">万<small>w · 10⁴</small></button>
               <button type="button" class="chip" data-unit="亿">亿<small>y · 10⁸</small></button>
               <button type="button" class="chip" data-unit="兆">兆<small>z · 10¹²</small></button>
-              <button type="button" class="chip" data-unit="k">k<small>×1,000</small></button>
+              <button type="button" class="chip" data-unit="k">k<small>×10³</small></button>
+              <button type="button" class="chip" data-unit="m">m<small>×10⁶</small></button>
+              <button type="button" class="chip" data-unit="b">b<small>×10⁹</small></button>
+              <button type="button" class="chip" data-unit="t">t<small>×10¹²</small></button>
             </div>
             <p id="amount-status" class="status" aria-live="polite"></p>
           </div>
@@ -55,9 +58,9 @@
             <div class="combobox" id="combobox">
               <button type="button" class="combobox-trigger" id="combobox-trigger" aria-haspopup="listbox" aria-expanded="false">
                 <span class="selected" id="selected-currency">
-                  <span class="flag">🇨🇳</span>
-                  <span class="sel-code">RMB</span>
-                  <span class="sel-country">China</span>
+                  <span class="flag">🇸🇬</span>
+                  <span class="sel-code">SGD</span>
+                  <span class="sel-country">Singapore</span>
                 </span>
                 <span class="caret">▾</span>
               </button>

@@ -6,7 +6,7 @@
 // PRIORITY currencies are pinned to the top of the dropdown and are the
 // fixed rows of the output table.
 
-window.PRIORITY_CODES = ["sgd", "myr", "usd", "twd", "cny", "hkd"];
+window.PRIORITY_CODES = ["sgd", "myr", "usd", "twd", "cny", "jpy", "aud", "hkd"];
 
 window.CURRENCIES = [
   // ----- high precedence -----
@@ -15,6 +15,8 @@ window.CURRENCIES = [
   { code: "usd", name: "US Dollar", country: "United States", flag: "🇺🇸" },
   { code: "twd", name: "New Taiwan Dollar", country: "Taiwan", flag: "🇹🇼" },
   { code: "cny", label: "RMB", name: "Chinese Yuan (Renminbi)", country: "China", flag: "🇨🇳", aliases: ["rmb", "renminbi", "yuan", "cny"] },
+  { code: "jpy", name: "Japanese Yen", country: "Japan", flag: "🇯🇵" },
+  { code: "aud", name: "Australian Dollar", country: "Australia", flag: "🇦🇺" },
   { code: "hkd", name: "Hong Kong Dollar", country: "Hong Kong", flag: "🇭🇰" },
 
   // ----- rest (alphabetical-ish by country) -----
@@ -25,7 +27,6 @@ window.CURRENCIES = [
   { code: "ang", name: "Netherlands Antillean Guilder", country: "Curaçao / Sint Maarten", flag: "🇨🇼" },
   { code: "aoa", name: "Angolan Kwanza", country: "Angola", flag: "🇦🇴" },
   { code: "ars", name: "Argentine Peso", country: "Argentina", flag: "🇦🇷" },
-  { code: "aud", name: "Australian Dollar", country: "Australia", flag: "🇦🇺" },
   { code: "awg", name: "Aruban Florin", country: "Aruba", flag: "🇦🇼" },
   { code: "azn", name: "Azerbaijani Manat", country: "Azerbaijan", flag: "🇦🇿" },
   { code: "bam", name: "Bosnia-Herzegovina Convertible Mark", country: "Bosnia and Herzegovina", flag: "🇧🇦" },
@@ -82,7 +83,6 @@ window.CURRENCIES = [
   { code: "isk", name: "Icelandic Króna", country: "Iceland", flag: "🇮🇸" },
   { code: "jmd", name: "Jamaican Dollar", country: "Jamaica", flag: "🇯🇲" },
   { code: "jod", name: "Jordanian Dinar", country: "Jordan", flag: "🇯🇴" },
-  { code: "jpy", name: "Japanese Yen", country: "Japan", flag: "🇯🇵" },
   { code: "kes", name: "Kenyan Shilling", country: "Kenya", flag: "🇰🇪" },
   { code: "kgs", name: "Kyrgystani Som", country: "Kyrgyzstan", flag: "🇰🇬" },
   { code: "khr", name: "Cambodian Riel", country: "Cambodia", flag: "🇰🇭" },

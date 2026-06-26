@@ -26,7 +26,7 @@
   // ---- state ----
   const state = {
     rates: null, // { base, date, fetched_at, rates: {code: perUsd} }
-    fromCode: "cny", // default: amounts in 万/亿 are usually RMB
+    fromCode: "sgd", // default input currency
     activeIndex: -1, // highlighted option in the open list
     filtered: [], // currently shown options
   };
@@ -126,7 +126,6 @@
       const meta = byCode.get(code) || { code, country: "", flag: "" };
       const converted = value == null ? null : convert(value, code);
       const isFrom = code === state.fromCode;
-      const compact = converted == null ? "" : formatCompact(converted);
       return `
         <tr class="${isFrom ? "is-from" : ""}">
           <td class="cur">
@@ -134,15 +133,28 @@
             <span class="code">${display(meta)}</span>
             ${isFrom ? '<span class="badge">from</span>' : ""}
           </td>
-          <td class="num">
-            ${converted == null ? '<span class="muted">—</span>' : formatMoney(converted)}
-            ${compact ? `<span class="compact">≈ ${compact}</span>` : ""}
-          </td>
+          <td class="num">${amountCell(converted)}</td>
           <td class="country">${meta.country || ""}</td>
         </tr>`;
     }).join("");
 
     els.ratesBody.innerHTML = rows;
+  }
+
+  // Render the Amount cell. Large values (≥ 1M) show a compact form (e.g.
+  // 426.35B) as the main display; clicking reveals a tooltip with the exact
+  // number. Smaller values are already exact, so they're shown plainly.
+  function amountCell(value) {
+    if (value == null || !isFinite(value)) return '<span class="muted">—</span>';
+    const full = formatMoney(value);
+    const compact = formatCompact(value); // "" when below 1e6
+    if (!compact) return `<span class="amount-plain">${full}</span>`;
+    return (
+      '<button type="button" class="amount" aria-expanded="false" title="Click for exact amount">' +
+      `<span class="amount-main">${compact}</span>` +
+      `<span class="tip" role="tooltip">${full}</span>` +
+      "</button>"
+    );
   }
 
   function renderStatus(parsed) {
@@ -345,9 +357,30 @@
       if (li) selectCode(li.dataset.code);
     });
 
-    // Close when clicking outside.
+    // Amount tooltips: click an abbreviated amount to reveal the exact number.
+    els.ratesBody.addEventListener("click", (e) => {
+      const btn = e.target.closest(".amount");
+      closeTips(btn); // close any other open tooltip
+      if (btn) {
+        const open = !btn.classList.contains("open");
+        btn.classList.toggle("open", open);
+        btn.setAttribute("aria-expanded", String(open));
+        e.stopPropagation(); // keep the outside-click handler from closing it
+      }
+    });
+
+    // Close popovers when clicking outside.
     document.addEventListener("click", (e) => {
       if (!els.combobox.contains(e.target)) closePanel();
+      if (!e.target.closest(".amount")) closeTips(null);
+    });
+  }
+
+  function closeTips(except) {
+    els.ratesBody.querySelectorAll(".amount.open").forEach((b) => {
+      if (b === except) return;
+      b.classList.remove("open");
+      b.setAttribute("aria-expanded", "false");
     });
   }
 

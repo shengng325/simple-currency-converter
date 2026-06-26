@@ -8,25 +8,37 @@
 // but 亿万 is not.
 (function (global) {
   // Multiplier contributed by each unit character.
+  // English short forms (k/m/b/t) stay as-is; Chinese units are 万/亿/兆.
   const UNIT_MULT = {
-    k: 1e3,
+    k: 1e3, // thousand
     "万": 1e4,
+    m: 1e6, // million
     "亿": 1e8,
+    b: 1e9, // billion
     "兆": 1e12,
+    t: 1e12, // trillion
   };
 
   // Magnitude exponent, used to enforce ascending (small -> large) order.
   const UNIT_EXP = {
     k: 3,
     "万": 4,
+    m: 6,
     "亿": 8,
+    b: 9,
     "兆": 12,
+    t: 12,
   };
 
-  // Keyboard shortcuts -> unit character. "k" stays "k".
-  const KEY_MAP = { w: "万", y: "亿", z: "兆", k: "k" };
+  // Keyboard shortcuts -> unit character. English forms stay themselves.
+  const KEY_MAP = { w: "万", y: "亿", z: "兆", k: "k", m: "m", b: "b", t: "t" };
 
-  const UNIT_CHARS = Object.keys(UNIT_MULT); // ["k","万","亿","兆"]
+  const UNIT_CHARS = Object.keys(UNIT_MULT); // ["k","万","m","亿","b","兆","t"]
+
+  // Character class for the unit suffix, derived from UNIT_CHARS.
+  const AMOUNT_RE = new RegExp(
+    `^([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*([${UNIT_CHARS.join("")}]*)$`,
+  );
 
   // Turn raw typed text into normalized display text:
   // w->万, y->亿, z->兆, k->k (case-insensitive). Everything else is kept so the
@@ -53,12 +65,12 @@
     }
 
     // <number><units>, number may use thousands commas and a decimal part.
-    const m = normalized.match(/^([0-9][0-9,]*(?:\.[0-9]+)?)\s*([万亿兆k]*)$/);
+    const m = normalized.match(AMOUNT_RE);
     if (!m) {
       return {
         ok: false,
         normalized,
-        error: "Enter a number optionally followed by 万 / 亿 / 兆 / k.",
+        error: "Enter a number optionally followed by 万 / 亿 / 兆 / k / m / b / t.",
       };
     }
 

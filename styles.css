@@ -92,6 +92,11 @@ body {
   }
 }
 
+.field {
+  /* allow the column to shrink so the chip row can scroll instead of
+     forcing the whole layout wider than the viewport */
+  min-width: 0;
+}
 .field label {
   display: block;
   font-size: 0.78rem;
@@ -124,11 +129,18 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 10px;
-  flex-wrap: wrap;
+  min-width: 0;
+  overflow-x: auto;
+  /* single row, hidden scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / old Edge */
+}
+.shortcuts::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Edge */
 }
 .chip {
-  flex: 1 1 auto;
-  min-width: 56px;
+  flex: 0 0 auto;
+  min-width: 58px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -369,12 +381,55 @@ body {
 .cur .code {
   font-weight: 700;
 }
-.num {
+.rates-table td.num {
+  font-weight: 600;
+  position: relative;
+}
+.amount-plain {
   font-weight: 600;
 }
-.num .compact {
+.amount {
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: 0 1px 1px;
+  cursor: pointer;
+  border-bottom: 1.5px dashed var(--ink-faint);
+  transition: color 0.12s, border-color 0.12s;
+}
+.amount:hover,
+.amount.open {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+.tip {
+  display: none;
+  position: absolute;
+  right: 8px;
+  bottom: calc(100% - 6px);
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-shadow: 0 10px 22px -8px rgba(15, 23, 42, 0.6);
+  z-index: 25;
+}
+.tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 16px;
+  border: 6px solid transparent;
+  border-top-color: var(--ink);
+}
+.amount.open .tip {
   display: block;
-  font-size: 0.72rem;
 }
 .country {
   color: var(--ink-soft);
