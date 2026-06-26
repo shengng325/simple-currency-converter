@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Currency Chiverter · 货币换算</title>
+    <meta
+      name="description"
+      content="Convert an amount (with Chinese 万/亿/兆 units) into SGD, MYR, USD, TWD, RMB and HKD."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💱</text></svg>"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1><span class="logo">💱</span> Currency Chiverter</h1>
+        <p class="subtitle">
+          Type an amount with Chinese units — 万 / 亿 / 兆 — and see it in every
+          major currency.
+        </p>
+      </header>
+
+      <main class="card">
+        <!-- ===================== INPUT ===================== -->
+        <section class="input-grid">
+          <!-- Amount -->
+          <div class="field amount-field">
+            <label for="amount">Amount</label>
+            <input
+              id="amount"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="e.g. 10万  ·  type w / y / z / k"
+              value="100万"
+            />
+            <div class="shortcuts" role="group" aria-label="Insert unit">
+              <button type="button" class="chip" data-unit="万">万<small>w · 10⁴</small></button>
+              <button type="button" class="chip" data-unit="亿">亿<small>y · 10⁸</small></button>
+              <button type="button" class="chip" data-unit="兆">兆<small>z · 10¹²</small></button>
+              <button type="button" class="chip" data-unit="k">k<small>×1,000</small></button>
+            </div>
+            <p id="amount-status" class="status" aria-live="polite"></p>
+          </div>
+
+          <!-- From currency -->
+          <div class="field currency-field">
+            <label for="currency-search">From currency</label>
+            <div class="combobox" id="combobox">
+              <button type="button" class="combobox-trigger" id="combobox-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="selected" id="selected-currency">
+                  <span class="flag">🇨🇳</span>
+                  <span class="sel-code">RMB</span>
+                  <span class="sel-country">China</span>
+                </span>
+                <span class="caret">▾</span>
+              </button>
+              <div class="combobox-panel" id="combobox-panel" hidden>
+                <input
+                  type="text"
+                  id="currency-search"
+                  class="combobox-search"
+                  placeholder="Search code or country (e.g. SGD, Taiwan)…"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <ul class="combobox-list" id="combobox-list" role="listbox" aria-label="Currencies"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== OUTPUT ===================== -->
+        <section class="output">
+          <div class="output-head">
+            <h2>Converted</h2>
+            <div class="parsed" id="parsed-amount"></div>
+          </div>
+          <table class="rates-table">
+            <thead>
+              <tr>
+                <th scope="col">Currency</th>
+                <th scope="col" class="num">Amount</th>
+                <th scope="col">Country</th>
+              </tr>
+            </thead>
+            <tbody id="rates-body"></tbody>
+          </table>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span id="updated">Loading exchange rates…</span>
+        <span class="dot">·</span>
+        <span>Rates from
+          <a href="https://github.com/fawazahmed0/exchange-api" target="_blank" rel="noopener">currency-api</a>,
+          refreshed daily.</span>
+      </footer>
+    </div>
+
+    <!-- order matters: libs before app -->
+    <script src="amount.js"></script>
+    <script src="currencies.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

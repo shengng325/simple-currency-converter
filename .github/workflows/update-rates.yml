@@ -1,0 +1,39 @@
+name: Update exchange rates
+
+on:
+  schedule:
+    # Daily at 02:30 UTC. The upstream feed refreshes roughly once a day.
+    - cron: "30 2 * * *"
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-rates
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch latest rates
+        run: node scripts/fetch-rates.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/rates.json; then
+            echo "No rate changes."
+          else
+            git add data/rates.json
+            git commit -m "chore: update exchange rates ($(date -u +%Y-%m-%d))"
+            git push
+          fi
