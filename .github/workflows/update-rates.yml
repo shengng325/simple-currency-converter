@@ -2,8 +2,8 @@ name: Update exchange rates
 
 on:
   schedule:
-    # Daily at 02:30 UTC. The upstream feed refreshes roughly once a day.
-    - cron: "30 2 * * *"
+    # TEMPORARY: every 10 minutes for testing. Restore to "30 2 * * *" (daily 02:30 UTC) when done.
+    - cron: "*/10 * * * *"
   workflow_dispatch: {} # allow manual runs from the Actions tab
 
 permissions:
