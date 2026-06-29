@@ -323,14 +323,39 @@
     els.trigger.setAttribute("aria-expanded", "false");
   }
 
-  // Update the trigger label + table for the given currency (no panel changes).
-  function applyCurrency(code) {
-    state.fromCode = code;
+  // --- persistence: remember the last picked currency across reloads ---
+  const STORAGE_KEY = "currency-chiverter:fromCode";
+
+  function saveCurrency(code) {
+    try {
+      localStorage.setItem(STORAGE_KEY, code);
+    } catch (e) {
+      /* storage unavailable (private mode / disabled) — ignore */
+    }
+  }
+
+  function loadSavedCurrency() {
+    try {
+      return localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function renderSelectedTrigger(code) {
     const meta = byCode.get(code) || { code, flag: "", country: "" };
     els.selected.innerHTML = `
       <span class="flag">${meta.flag || ""}</span>
       <span class="sel-code">${display(meta)}</span>
       <span class="sel-country">${meta.country || ""}</span>`;
+  }
+
+  // Update the trigger label + table for the given currency (no panel changes)
+  // and remember it for next time.
+  function applyCurrency(code) {
+    state.fromCode = code;
+    renderSelectedTrigger(code);
+    saveCurrency(code);
     render();
   }
 
@@ -571,6 +596,12 @@
   // ============================================================
   // Init
   // ============================================================
+  // Restore the last picked currency (if it's one we know) before first render.
+  const saved = loadSavedCurrency();
+  if (saved && byCode.has(saved)) {
+    state.fromCode = saved;
+    renderSelectedTrigger(saved);
+  }
   wire();
   loadRates();
 })();
