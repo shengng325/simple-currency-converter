@@ -187,6 +187,18 @@
   // ============================================================
   // Amount input
   // ============================================================
+  // The last caret/selection the user actually placed in the amount field (by
+  // typing, clicking, arrow keys, or selecting). Starts null and is updated only
+  // by real interactions — never by the browser silently restoring focus on
+  // reload (which leaves the caret at 0). So a chip inserts at the real cursor,
+  // and falls back to the end when no cursor has been placed yet.
+  let amountSel = null;
+
+  function rememberSel() {
+    const el = els.amount;
+    amountSel = { start: el.selectionStart, end: el.selectionEnd };
+  }
+
   function onAmountInput() {
     // Live transform (w->万 etc). Every mapping is 1:1 char so caret holds.
     const el = els.amount;
@@ -196,13 +208,19 @@
       el.value = transformed;
       el.setSelectionRange(caret, caret);
     }
+    rememberSel();
     render();
   }
 
+  // Insert a unit at the user's cursor (mid-string works), or append to the end
+  // when no cursor has been placed yet.
   function insertUnit(unit) {
     const el = els.amount;
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? el.value.length;
+    const len = el.value.length;
+    let start = amountSel ? amountSel.start : len;
+    let end = amountSel ? amountSel.end : len;
+    start = Math.min(Math.max(start, 0), len);
+    end = Math.min(Math.max(end, start), len);
     el.value = el.value.slice(0, start) + unit + el.value.slice(end);
     const pos = start + unit.length;
     el.focus();
@@ -322,10 +340,17 @@
   // ============================================================
   function wire() {
     els.amount.addEventListener("input", onAmountInput);
-
-    els.shortcuts.forEach((btn) =>
-      btn.addEventListener("click", () => insertUnit(btn.dataset.unit)),
+    // Remember only carets the user actually places (not browser focus-restore),
+    // so chips insert at the real cursor and don't jump to the front on reload.
+    ["keyup", "click", "select"].forEach((evt) =>
+      els.amount.addEventListener(evt, rememberSel),
     );
+
+    els.shortcuts.forEach((btn) => {
+      // keep focus/caret in the input when a chip is clicked
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+      btn.addEventListener("click", () => insertUnit(btn.dataset.unit));
+    });
 
     els.trigger.addEventListener("click", () => {
       els.panel.hidden ? openPanel() : closePanel();
