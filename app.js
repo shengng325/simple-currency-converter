@@ -348,8 +348,8 @@
   const scrub = {
     active: false,
     startY: 0,
-    baseIndex: 0,
-    curIndex: 0,
+    basePos: 0, // strip position where the gesture started
+    curPos: 0, // current strip position
     moved: false,
     longPress: null,
     suppressClick: false,
@@ -361,6 +361,7 @@
   const SCRUB_LONGPRESS_MS = 350; // hold time that enters scrub mode
   const SCRUB_ROWS = 3; // visible rows: previous / current / next
   const SCRUB_ROW_H = 40; // row height in px (must match .scrub-item in CSS)
+  const SCRUB_COPIES = 3; // list is repeated this many times so the wheel loops
 
   function priorityIndexOf(code) {
     const i = PRIORITY_CODES.indexOf(code);
@@ -371,7 +372,7 @@
     if (scrub.el) return scrub.el;
     const el = document.createElement("div");
     el.className = "scrub";
-    const items = PRIORITY_CODES.map((code) => {
+    const one = PRIORITY_CODES.map((code) => {
       const meta = byCode.get(code) || { code, flag: "", country: "" };
       return `<div class="scrub-item" data-code="${code}">
           <span class="flag">${meta.flag || ""}</span>
@@ -379,34 +380,45 @@
           <span class="scrub-country">${meta.country || ""}</span>
         </div>`;
     }).join("");
+    // repeat the list so swiping past the ends loops smoothly (no visual jump)
     el.innerHTML =
-      '<div class="scrub-window"><div class="scrub-strip">' + items + "</div></div>";
+      '<div class="scrub-window"><div class="scrub-strip">' +
+      one.repeat(SCRUB_COPIES) +
+      "</div></div>";
     els.combobox.appendChild(el);
     scrub.el = el;
     scrub.strip = el.querySelector(".scrub-strip");
     return el;
   }
 
-  // Wheel/scrubber: center the active currency, with the previous and next
-  // faded above and below. The strip slides as the index changes — it is not a
-  // dropdown list.
-  function paintScrub(idx) {
+  // Wheel/scrubber: center the strip position `pos`, with the previous and next
+  // rows faded above and below. The strip slides as `pos` changes — it is not a
+  // dropdown list. `immediate` skips the slide animation (used on activation).
+  function paintScrub(pos, immediate) {
     ensureScrubOverlay();
     const centerRow = Math.floor(SCRUB_ROWS / 2);
-    scrub.strip.style.transform = `translateY(${(centerRow - idx) * SCRUB_ROW_H}px)`;
+    if (immediate) scrub.strip.style.transition = "none";
+    scrub.strip.style.transform = `translateY(${(centerRow - pos) * SCRUB_ROW_H}px)`;
+    if (immediate) {
+      scrub.strip.offsetHeight; // force reflow so the jump isn't animated
+      scrub.strip.style.transition = "";
+    }
     scrub.strip.querySelectorAll(".scrub-item").forEach((it, i) =>
-      it.classList.toggle("active", i === idx),
+      it.classList.toggle("active", i === pos),
     );
   }
 
   function activateScrub() {
     if (scrub.active) return;
     scrub.active = true;
-    scrub.baseIndex = priorityIndexOf(state.fromCode);
-    scrub.curIndex = scrub.baseIndex;
+    const n = PRIORITY_CODES.length;
+    // start centered in the middle copy so the wheel has room to loop both ways
+    scrub.basePos =
+      priorityIndexOf(state.fromCode) + n * Math.floor(SCRUB_COPIES / 2);
+    scrub.curPos = scrub.basePos;
     closePanel();
     ensureScrubOverlay().classList.add("visible");
-    paintScrub(scrub.curIndex);
+    paintScrub(scrub.curPos, true);
     if (navigator.vibrate) navigator.vibrate(12);
   }
 
@@ -448,20 +460,27 @@
       }
     }
     const delta = Math.round((scrub.startY - y) / SCRUB_STEP_PX); // up = forward
-    const idx = Math.min(
-      Math.max(scrub.baseIndex + delta, 0),
-      PRIORITY_CODES.length - 1,
+    // keep within the rendered strip; currency wraps via modulo so it loops
+    const pos = Math.min(
+      Math.max(scrub.basePos + delta, 0),
+      PRIORITY_CODES.length * SCRUB_COPIES - 1,
     );
-    if (idx !== scrub.curIndex) {
-      scrub.curIndex = idx;
-      applyCurrency(PRIORITY_CODES[idx]);
-      paintScrub(idx);
+    if (pos !== scrub.curPos) {
+      scrub.curPos = pos;
+      paintScrub(pos); // only move the wheel — the table recalcs once, on release
       if (navigator.vibrate) navigator.vibrate(5);
     }
   }
 
   function onTriggerTouchEnd(e) {
-    if (scrub.active) e.preventDefault();
+    if (scrub.active) {
+      e.preventDefault();
+      // commit the picked currency now — one recalculation instead of per-swipe
+      if (scrub.curPos !== scrub.basePos) {
+        const n = PRIORITY_CODES.length;
+        applyCurrency(PRIORITY_CODES[((scrub.curPos % n) + n) % n]);
+      }
+    }
     endScrub();
   }
 
