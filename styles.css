@@ -314,6 +314,89 @@ body {
   line-height: 1;
 }
 
+/* ---------- mobile scrub picker ---------- */
+/* hint that the trigger supports the hold-and-swipe gesture (touch only) */
+@media (pointer: coarse) {
+  .combobox-trigger .caret::before {
+    content: "⇅";
+    margin-right: 6px;
+    opacity: 0.45;
+    font-size: 0.9em;
+  }
+}
+.scrub {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%; /* center the picker on the trigger */
+  transform: translateY(-50%) scale(0.98);
+  z-index: 60;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -16px rgba(15, 23, 42, 0.5);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none; /* never intercept the touch driving the gesture */
+  transition: opacity 0.12s, transform 0.12s;
+}
+.scrub.visible {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+.scrub-window {
+  position: relative;
+  height: 120px; /* 3 rows * 40px — keep in sync with SCRUB_ROW_H/SCRUB_ROWS */
+  overflow: hidden;
+  /* fade the previous/next rows toward the edges for a wheel feel */
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+}
+/* highlighted slot for the current selection (middle row) */
+.scrub-window::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  z-index: 0;
+}
+.scrub-strip {
+  position: relative;
+  z-index: 1;
+  transition: transform 0.12s ease-out;
+  will-change: transform;
+}
+.scrub-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  opacity: 0.35;
+  transition: opacity 0.12s;
+}
+.scrub-item .scrub-code {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.scrub-item .scrub-country {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+.scrub-item.active {
+  opacity: 1;
+}
+.scrub-item.active .scrub-code {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--brand);
+}
+
 /* ---------- output ---------- */
 .output {
   margin-top: 28px;

@@ -323,16 +323,142 @@
     els.trigger.setAttribute("aria-expanded", "false");
   }
 
-  function selectCode(code) {
-    if (!byCode.has(code) && rateOf(code) == null) return;
+  // Update the trigger label + table for the given currency (no panel changes).
+  function applyCurrency(code) {
     state.fromCode = code;
-    const meta = byCode.get(code);
+    const meta = byCode.get(code) || { code, flag: "", country: "" };
     els.selected.innerHTML = `
       <span class="flag">${meta.flag || ""}</span>
       <span class="sel-code">${display(meta)}</span>
       <span class="sel-country">${meta.country || ""}</span>`;
-    closePanel();
     render();
+  }
+
+  function selectCode(code) {
+    if (!byCode.has(code) && rateOf(code) == null) return;
+    applyCurrency(code);
+    closePanel();
+  }
+
+  // ============================================================
+  // Mobile scrub gesture: hold or drag vertically on the trigger to flick
+  // through the high-precedence currencies (like TradingView's value scrubber).
+  // A plain tap still opens the searchable dropdown.
+  // ============================================================
+  const scrub = {
+    active: false,
+    startY: 0,
+    baseIndex: 0,
+    curIndex: 0,
+    moved: false,
+    longPress: null,
+    suppressClick: false,
+    el: null,
+    strip: null,
+  };
+  const SCRUB_STEP_PX = 26; // vertical distance per currency step
+  const SCRUB_ACTIVATE_PX = 12; // drag distance that enters scrub mode
+  const SCRUB_LONGPRESS_MS = 350; // hold time that enters scrub mode
+  const SCRUB_ROWS = 3; // visible rows: previous / current / next
+  const SCRUB_ROW_H = 40; // row height in px (must match .scrub-item in CSS)
+
+  function priorityIndexOf(code) {
+    const i = PRIORITY_CODES.indexOf(code);
+    return i >= 0 ? i : 0;
+  }
+
+  function ensureScrubOverlay() {
+    if (scrub.el) return scrub.el;
+    const el = document.createElement("div");
+    el.className = "scrub";
+    const items = PRIORITY_CODES.map((code) => {
+      const meta = byCode.get(code) || { code, flag: "", country: "" };
+      return `<div class="scrub-item" data-code="${code}">
+          <span class="flag">${meta.flag || ""}</span>
+          <span class="scrub-code">${display(meta)}</span>
+          <span class="scrub-country">${meta.country || ""}</span>
+        </div>`;
+    }).join("");
+    el.innerHTML =
+      '<div class="scrub-window"><div class="scrub-strip">' + items + "</div></div>";
+    els.combobox.appendChild(el);
+    scrub.el = el;
+    scrub.strip = el.querySelector(".scrub-strip");
+    return el;
+  }
+
+  // Wheel/scrubber: center the active currency, with the previous and next
+  // faded above and below. The strip slides as the index changes — it is not a
+  // dropdown list.
+  function paintScrub(idx) {
+    ensureScrubOverlay();
+    const centerRow = Math.floor(SCRUB_ROWS / 2);
+    scrub.strip.style.transform = `translateY(${(centerRow - idx) * SCRUB_ROW_H}px)`;
+    scrub.strip.querySelectorAll(".scrub-item").forEach((it, i) =>
+      it.classList.toggle("active", i === idx),
+    );
+  }
+
+  function activateScrub() {
+    if (scrub.active) return;
+    scrub.active = true;
+    scrub.baseIndex = priorityIndexOf(state.fromCode);
+    scrub.curIndex = scrub.baseIndex;
+    closePanel();
+    ensureScrubOverlay().classList.add("visible");
+    paintScrub(scrub.curIndex);
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+
+  function endScrub() {
+    clearTimeout(scrub.longPress);
+    if (!scrub.active) return;
+    scrub.active = false;
+    scrub.suppressClick = true; // swallow the click that follows touchend
+    if (scrub.el) scrub.el.classList.remove("visible");
+    setTimeout(() => (scrub.suppressClick = false), 500);
+  }
+
+  function onTriggerTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    scrub.startY = e.touches[0].clientY;
+    scrub.moved = false;
+    scrub.active = false;
+    clearTimeout(scrub.longPress);
+    scrub.longPress = setTimeout(() => {
+      if (!scrub.moved) activateScrub();
+    }, SCRUB_LONGPRESS_MS);
+  }
+
+  function onTriggerTouchMove(e) {
+    const y = e.touches[0].clientY;
+    const dy = y - scrub.startY;
+    if (!scrub.active) {
+      if (Math.abs(dy) > SCRUB_ACTIVATE_PX) {
+        scrub.moved = true;
+        clearTimeout(scrub.longPress);
+        activateScrub();
+      } else {
+        return;
+      }
+    }
+    e.preventDefault(); // we own the gesture now — stop page scroll
+    const delta = Math.round((scrub.startY - y) / SCRUB_STEP_PX); // up = forward
+    const idx = Math.min(
+      Math.max(scrub.baseIndex + delta, 0),
+      PRIORITY_CODES.length - 1,
+    );
+    if (idx !== scrub.curIndex) {
+      scrub.curIndex = idx;
+      applyCurrency(PRIORITY_CODES[idx]);
+      paintScrub(idx);
+      if (navigator.vibrate) navigator.vibrate(5);
+    }
+  }
+
+  function onTriggerTouchEnd(e) {
+    if (scrub.active) e.preventDefault();
+    endScrub();
   }
 
   // ============================================================
@@ -353,8 +479,18 @@
     });
 
     els.trigger.addEventListener("click", () => {
+      if (scrub.suppressClick) {
+        scrub.suppressClick = false;
+        return; // this click is the tail of a scrub gesture, not a tap
+      }
       els.panel.hidden ? openPanel() : closePanel();
     });
+
+    // Mobile scrub gesture (touch only; desktop is unaffected).
+    els.trigger.addEventListener("touchstart", onTriggerTouchStart, { passive: true });
+    els.trigger.addEventListener("touchmove", onTriggerTouchMove, { passive: false });
+    els.trigger.addEventListener("touchend", onTriggerTouchEnd);
+    els.trigger.addEventListener("touchcancel", endScrub);
 
     els.search.addEventListener("input", buildList);
 
