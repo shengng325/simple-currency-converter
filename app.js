@@ -431,6 +431,11 @@
   }
 
   function onTriggerTouchMove(e) {
+    // Cancel from the FIRST move of any drag that begins on the trigger. iOS
+    // decides a gesture is a page-scroll based on whether the first touchmove is
+    // cancelled — if we wait for the activation threshold, the browser commits to
+    // scrolling and every later preventDefault() is ignored (the page scrolls).
+    if (e.cancelable) e.preventDefault();
     const y = e.touches[0].clientY;
     const dy = y - scrub.startY;
     if (!scrub.active) {
@@ -442,7 +447,6 @@
         return;
       }
     }
-    e.preventDefault(); // we own the gesture now — stop page scroll
     const delta = Math.round((scrub.startY - y) / SCRUB_STEP_PX); // up = forward
     const idx = Math.min(
       Math.max(scrub.baseIndex + delta, 0),
