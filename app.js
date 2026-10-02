@@ -178,9 +178,11 @@
       return `
         <tr class="${isFrom ? "is-from" : ""}" data-row="${code}">
           <td class="cur">
-            <span class="flag" data-code="${code}">${meta.flag || ""}</span>
-            <span class="code" data-code="${code}">${display(meta)}</span>
-            ${isFrom ? '<span class="badge">from</span>' : ""}
+            <div class="cur-inner">
+              <span class="flag" data-code="${code}">${meta.flag || ""}</span>
+              <span class="code" data-code="${code}">${display(meta)}</span>
+              ${isFrom ? '<span class="badge">from</span>' : ""}
+            </div>
           </td>
           <td class="num">${amountCell(converted)}</td>
           ${state.editing ? editCell(code, last) : `<td class="country">${meta.country || ""}</td>`}

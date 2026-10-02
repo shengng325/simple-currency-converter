@@ -463,7 +463,9 @@ body {
 .rates-table tr:last-child td {
   border-bottom: none;
 }
-.cur {
+/* flex lives on an inner wrapper: a flex <td> stops being a table cell, so it
+   wouldn't stretch to the row height and its bottom border would fall short */
+.cur-inner {
   display: flex;
   align-items: center;
   gap: 9px;
