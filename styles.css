@@ -124,6 +124,38 @@ body {
   border-color: var(--brand);
   box-shadow: 0 0 0 4px var(--brand-soft);
 }
+.amount-wrap {
+  position: relative;
+}
+.amount-wrap #amount {
+  padding-right: 48px; /* room for the ✕ */
+}
+.amount-clear {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  background: var(--line-soft);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.12s, background-color 0.12s;
+}
+.amount-clear:hover {
+  color: var(--ink);
+  background: var(--line);
+}
+.amount-clear[hidden] {
+  display: none;
+}
 
 .shortcuts {
   display: flex;

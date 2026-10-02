@@ -10,6 +10,7 @@
   // ---- element refs ----
   const els = {
     amount: document.getElementById("amount"),
+    amountClear: document.getElementById("amount-clear"),
     amountStatus: document.getElementById("amount-status"),
     shortcuts: document.querySelectorAll(".chip"),
     combobox: document.getElementById("combobox"),
@@ -164,6 +165,7 @@
   // Output table
   // ============================================================
   function render() {
+    els.amountClear.hidden = !els.amount.value;
     const parsed = parseAmount(els.amount.value);
     renderStatus(parsed);
 
@@ -266,6 +268,14 @@
   function rememberSel() {
     const el = els.amount;
     amountSel = { start: el.selectionStart, end: el.selectionEnd };
+  }
+
+  // ✕ in the amount box: wipe it and leave the cursor ready for typing.
+  function clearAmount() {
+    els.amount.value = "";
+    els.amount.focus();
+    rememberSel();
+    render();
   }
 
   function onAmountInput() {
@@ -705,6 +715,7 @@
   // ============================================================
   function wire() {
     els.amount.addEventListener("input", onAmountInput);
+    els.amountClear.addEventListener("click", clearAmount);
     // Remember only carets the user actually places (not browser focus-restore),
     // so chips insert at the real cursor and don't jump to the front on reload.
     ["keyup", "click", "select"].forEach((evt) =>
