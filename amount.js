@@ -1,8 +1,8 @@
-// Amount input handling: Chinese myriad units (万 / 亿 / 兆), English short forms
+// Amount input handling: Chinese units (千 / 万 / 亿 / 兆), English short forms
 // (k / m / b / t), typing shortcuts, and simple arithmetic.
 //
 // Magnitude system:
-//   k = 10^3   万 = 10^4   m = 10^6   亿 = 10^8   b = 10^9   兆/t = 10^12
+//   k/千 = 10^3   万 = 10^4   m = 10^6   亿 = 10^8   b = 10^9   兆/t = 10^12
 //
 // Stacked units multiply and must read small -> large, so 万亿 (10^12) is valid
 // but 亿万 is not.
@@ -12,9 +12,10 @@
 // Evaluation is done with a small recursive-descent parser — never eval().
 (function (global) {
   // Multiplier contributed by each unit character.
-  // English short forms (k/m/b/t) stay as-is; Chinese units are 万/亿/兆.
+  // English short forms (k/m/b/t) stay as-is; Chinese units are 千/万/亿/兆.
   const UNIT_MULT = {
     k: 1e3, // thousand
+    "千": 1e3,
     "万": 1e4,
     m: 1e6, // million
     "亿": 1e8,
@@ -26,6 +27,7 @@
   // Magnitude exponent, used to enforce ascending (small -> large) order.
   const UNIT_EXP = {
     k: 3,
+    "千": 3,
     "万": 4,
     m: 6,
     "亿": 8,
@@ -37,6 +39,7 @@
   // Keyboard shortcuts -> display character. English unit forms stay themselves;
   // "x" is a convenience alias for the "*" multiply operator.
   const KEY_MAP = {
+    q: "千",
     w: "万",
     y: "亿",
     z: "兆",
@@ -47,11 +50,11 @@
     x: "*",
   };
 
-  const UNIT_CHARS = Object.keys(UNIT_MULT); // ["k","万","m","亿","b","兆","t"]
+  const UNIT_CHARS = Object.keys(UNIT_MULT); // ["k","千","万","m","亿","b","兆","t"]
   const OPERATORS = "+-*/()";
 
   // Turn raw typed text into normalized display text:
-  // w->万, y->亿, z->兆, x->* (case-insensitive); k/m/b/t kept. Everything else
+  // q->千, w->万, y->亿, z->兆, x->* (case-insensitive); k/m/b/t kept. Everything else
   // is kept so the parser can flag it. Every mapping is 1 char -> 1 char, so the
   // caret position is preserved by the caller.
   function transformInput(raw) {

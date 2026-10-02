@@ -471,6 +471,9 @@ body {
 .cur .code {
   font-weight: 700;
 }
+tr:not(.is-from) .cur [data-code] {
+  cursor: pointer;
+}
 .rates-table td.num {
   font-weight: 600;
   position: relative;

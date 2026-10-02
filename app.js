@@ -129,8 +129,8 @@
       return `
         <tr class="${isFrom ? "is-from" : ""}">
           <td class="cur">
-            <span class="flag">${meta.flag || ""}</span>
-            <span class="code">${display(meta)}</span>
+            <span class="flag" data-code="${code}">${meta.flag || ""}</span>
+            <span class="code" data-code="${code}">${display(meta)}</span>
             ${isFrom ? '<span class="badge">from</span>' : ""}
           </td>
           <td class="num">${amountCell(converted)}</td>
@@ -238,16 +238,22 @@
 
   function matches(c, q) {
     if (!q) return true;
-    const hay = [
-      c.code,
-      c.label || "",
-      c.name,
-      c.country,
-      ...(c.aliases || []),
-    ]
-      .join(" ")
-      .toLowerCase();
-    return hay.includes(q);
+    // Compare with spaces/punctuation stripped so "newz" finds "New Zealand"
+    // and "hong kong" finds "Hongkong". Fields stay separate so a query can't
+    // match across the boundary of two fields.
+    const needle = normalize(q);
+    if (!needle) return true;
+    return [c.code, c.label || "", c.name, c.country, ...(c.aliases || [])].some(
+      (f) => normalize(f).includes(needle),
+    );
+  }
+
+  function normalize(s) {
+    return s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "") // drop accents: "córdoba" -> "cordoba"
+      .replace(/[^\p{L}\p{N}]/gu, "");
   }
 
   function buildList() {
@@ -567,7 +573,13 @@
     });
 
     // Amount tooltips: click an abbreviated amount to reveal the exact number.
+    // Clicking a currency flag or code makes it the "from" currency (amount unchanged).
     els.ratesBody.addEventListener("click", (e) => {
+      const pick = e.target.closest(".cur [data-code]");
+      if (pick) {
+        if (pick.dataset.code !== state.fromCode) applyCurrency(pick.dataset.code);
+        return;
+      }
       const btn = e.target.closest(".amount");
       closeTips(btn); // close any other open tooltip
       if (btn) {

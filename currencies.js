@@ -6,7 +6,7 @@
 // PRIORITY currencies are pinned to the top of the dropdown and are the
 // fixed rows of the output table.
 
-window.PRIORITY_CODES = ["sgd", "myr", "usd", "twd", "cny", "jpy", "aud", "hkd"];
+window.PRIORITY_CODES = ["sgd", "myr", "usd", "twd", "cny", "jpy", "aud", "nzd"];
 
 window.CURRENCIES = [
   // ----- high precedence -----
@@ -17,7 +17,7 @@ window.CURRENCIES = [
   { code: "cny", label: "RMB", name: "Chinese Yuan (Renminbi)", country: "China", flag: "🇨🇳", aliases: ["rmb", "renminbi", "yuan", "cny"] },
   { code: "jpy", name: "Japanese Yen", country: "Japan", flag: "🇯🇵" },
   { code: "aud", name: "Australian Dollar", country: "Australia", flag: "🇦🇺" },
-  { code: "hkd", name: "Hong Kong Dollar", country: "Hong Kong", flag: "🇭🇰" },
+  { code: "nzd", name: "New Zealand Dollar", country: "New Zealand", flag: "🇳🇿" },
 
   // ----- rest (alphabetical-ish by country) -----
   { code: "aed", name: "UAE Dirham", country: "United Arab Emirates", flag: "🇦🇪", aliases: ["dubai", "abu dhabi"] },
@@ -71,6 +71,7 @@ window.CURRENCIES = [
   { code: "gnf", name: "Guinean Franc", country: "Guinea", flag: "🇬🇳" },
   { code: "gtq", name: "Guatemalan Quetzal", country: "Guatemala", flag: "🇬🇹" },
   { code: "gyd", name: "Guyanaese Dollar", country: "Guyana", flag: "🇬🇾" },
+  { code: "hkd", name: "Hong Kong Dollar", country: "Hong Kong", flag: "🇭🇰" },
   { code: "hnl", name: "Honduran Lempira", country: "Honduras", flag: "🇭🇳" },
   { code: "hrk", name: "Croatian Kuna", country: "Croatia", flag: "🇭🇷" },
   { code: "htg", name: "Haitian Gourde", country: "Haiti", flag: "🇭🇹" },
@@ -116,7 +117,6 @@ window.CURRENCIES = [
   { code: "nio", name: "Nicaraguan Córdoba", country: "Nicaragua", flag: "🇳🇮" },
   { code: "nok", name: "Norwegian Krone", country: "Norway", flag: "🇳🇴" },
   { code: "npr", name: "Nepalese Rupee", country: "Nepal", flag: "🇳🇵" },
-  { code: "nzd", name: "New Zealand Dollar", country: "New Zealand", flag: "🇳🇿" },
   { code: "omr", name: "Omani Rial", country: "Oman", flag: "🇴🇲" },
   { code: "pab", name: "Panamanian Balboa", country: "Panama", flag: "🇵🇦" },
   { code: "pen", name: "Peruvian Sol", country: "Peru", flag: "🇵🇪" },
