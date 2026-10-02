@@ -544,6 +544,142 @@ tr.is-from {
   background: linear-gradient(90deg, var(--brand-soft), transparent);
 }
 
+/* ---------- edit currency list ---------- */
+.output.editing .parsed {
+  display: none;
+}
+.edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.edit-actions[hidden] {
+  display: none; /* `display: flex` above would otherwise override [hidden] */
+}
+.edit-link {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.edit-link:hover {
+  color: var(--brand);
+}
+.edit-done {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--brand);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.rates-table td.edit-ctl {
+  text-align: right;
+  white-space: nowrap;
+}
+.edit-btn {
+  width: 26px;
+  height: 26px;
+  /* negative vertical margin keeps edit-mode rows the same height as normal */
+  margin: -4px 0 -4px 4px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background-color 0.12s;
+}
+.edit-btn:hover:not(:disabled) {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.edit-btn[data-act="remove"]:hover:not(:disabled) {
+  color: var(--error);
+  border-color: var(--error);
+  background: #fef2f2;
+}
+.edit-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.edit-btn.grip {
+  margin-left: 10px; /* keep the handle clear of ✕ to avoid mis-taps */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  border-color: transparent;
+  background: none;
+  cursor: grab;
+  touch-action: none; /* a drag on the handle reorders instead of scrolling */
+}
+.edit-btn.grip:hover {
+  color: var(--ink);
+  border-color: transparent;
+  background: var(--line-soft);
+}
+tr[data-row] {
+  position: relative;
+}
+tr.dragging {
+  z-index: 5;
+  cursor: grabbing;
+  box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.35);
+}
+tr.dragging td {
+  background: #fff;
+}
+tr.dragging .grip {
+  cursor: grabbing;
+}
+.output.editing .cur [data-code] {
+  cursor: default;
+}
+.add-currency {
+  margin-top: 10px;
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.add-currency:focus-within {
+  border-style: solid;
+  border-color: var(--brand);
+}
+.add-search {
+  width: 100%;
+  border: none;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: transparent;
+}
+.add-search:focus {
+  outline: none;
+}
+/* phones: no room for amounts beside the edit buttons */
+@media (max-width: 560px) {
+  .output.editing .rates-table .num {
+    display: none;
+  }
+}
+.add-list:empty {
+  display: none;
+}
+.add-list {
+  border-top: 1px solid var(--line);
+  max-height: 240px;
+}
+
 /* ---------- footer ---------- */
 .footer {
   margin-top: 22px;
@@ -560,5 +696,17 @@ tr.is-from {
   opacity: 0.5;
 }
 .footer strong {
+  color: #fff;
+}
+.footer-link {
+  font: inherit;
+  color: #e0e7ff;
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.footer-link:hover {
   color: #fff;
 }

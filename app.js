@@ -5,7 +5,7 @@
 
   const { transformInput, parseAmount } = window.AmountLib;
   const CURRENCIES = window.CURRENCIES;
-  const PRIORITY_CODES = window.PRIORITY_CODES;
+  const DEFAULT_PRIORITY = window.PRIORITY_CODES;
 
   // ---- element refs ----
   const els = {
@@ -20,6 +20,15 @@
     selected: document.getElementById("selected-currency"),
     parsed: document.getElementById("parsed-amount"),
     ratesBody: document.getElementById("rates-body"),
+    output: document.getElementById("output"),
+    colCountry: document.getElementById("col-country"),
+    editActions: document.getElementById("edit-actions"),
+    editReset: document.getElementById("edit-reset"),
+    editDone: document.getElementById("edit-done"),
+    addCur: document.getElementById("add-currency"),
+    addSearch: document.getElementById("add-search"),
+    addList: document.getElementById("add-list"),
+    editOpen: document.getElementById("edit-open"),
     updated: document.getElementById("updated"),
   };
 
@@ -29,10 +38,47 @@
     fromCode: "sgd", // default input currency
     activeIndex: -1, // highlighted option in the open list
     filtered: [], // currently shown options
+    editing: false, // Converted table is in "edit currency list" mode
   };
 
   const byCode = new Map(CURRENCIES.map((c) => [c.code, c]));
   const display = (c) => c.label || c.code.toUpperCase();
+
+  // --- high-precedence list: user's own order, saved in localStorage ---
+  // Drives the Converted table rows, the dropdown's "Top currencies" group and
+  // the mobile scrub wheel. Falls back to the default list in currencies.js.
+  const PRIORITY_KEY = "currency-chiverter:priority";
+  let priorityCodes = loadPriority();
+
+  function loadPriority() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PRIORITY_KEY));
+      if (Array.isArray(saved)) {
+        const codes = [...new Set(saved)].filter((c) => byCode.has(c));
+        if (codes.length) return codes;
+      }
+    } catch (e) {
+      /* missing, corrupt or storage unavailable — use the default */
+    }
+    return [...DEFAULT_PRIORITY];
+  }
+
+  function setPriority(codes) {
+    priorityCodes = codes;
+    try {
+      if (codes.join() === DEFAULT_PRIORITY.join()) localStorage.removeItem(PRIORITY_KEY);
+      else localStorage.setItem(PRIORITY_KEY, JSON.stringify(codes));
+    } catch (e) {
+      /* storage unavailable — the change still applies until reload */
+    }
+    // the scrub wheel caches its strip; rebuild it with the new list next time
+    if (scrub.el) {
+      scrub.el.remove();
+      scrub.el = null;
+    }
+    render();
+    renderAddList();
+  }
 
   // ============================================================
   // Rates loading
@@ -68,7 +114,9 @@
         });
       }
     }
-    els.updated.innerHTML = "Rates last updated: <strong>" + when + "</strong>";
+    els.updated.innerHTML =
+      "Rates last updated: <strong>" + when + "</strong> from " +
+      '<a href="https://github.com/fawazahmed0/exchange-api" target="_blank" rel="noopener">currency-api</a>';
   }
 
   // ============================================================
@@ -122,23 +170,40 @@
     const value = parsed.ok ? parsed.value : null;
     renderParsed(parsed);
 
-    const rows = PRIORITY_CODES.map((code) => {
+    const last = priorityCodes.length - 1;
+    const rows = priorityCodes.map((code, i) => {
       const meta = byCode.get(code) || { code, country: "", flag: "" };
       const converted = value == null ? null : convert(value, code);
       const isFrom = code === state.fromCode;
       return `
-        <tr class="${isFrom ? "is-from" : ""}">
+        <tr class="${isFrom ? "is-from" : ""}" data-row="${code}">
           <td class="cur">
             <span class="flag" data-code="${code}">${meta.flag || ""}</span>
             <span class="code" data-code="${code}">${display(meta)}</span>
             ${isFrom ? '<span class="badge">from</span>' : ""}
           </td>
           <td class="num">${amountCell(converted)}</td>
-          <td class="country">${meta.country || ""}</td>
+          ${state.editing ? editCell(code, last) : `<td class="country">${meta.country || ""}</td>`}
         </tr>`;
     }).join("");
 
     els.ratesBody.innerHTML = rows;
+  }
+
+  // Edit-mode controls that replace the Country cell: remove, and a drag
+  // handle (≡) to reorder. The handle also takes ↑ / ↓ keys.
+  const GRIP_SVG =
+    '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' +
+    '<path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+  function editCell(code, last) {
+    const name = display(byCode.get(code) || { code });
+    return `<td class="edit-ctl">
+      <button type="button" class="edit-btn" data-act="remove" data-code="${code}"
+        aria-label="Remove ${name}" title="Remove"${last === 0 ? " disabled" : ""}>✕</button>
+      <button type="button" class="edit-btn grip" data-act="drag" data-code="${code}"
+        aria-label="Reorder ${name} (drag, or use arrow keys)" title="Drag to reorder">${GRIP_SVG}</button>
+    </td>`;
   }
 
   // Render the Amount cell. Large values (≥ 1M) show a compact form (e.g.
@@ -263,11 +328,11 @@
     const rest = [];
     for (const c of all) {
       if (!matches(c, q)) continue;
-      (PRIORITY_CODES.includes(c.code) ? priority : rest).push(c);
+      (priorityCodes.includes(c.code) ? priority : rest).push(c);
     }
-    // Keep priority in the README's order; sort the rest by country name.
+    // Keep priority in the user's order; sort the rest by country name.
     priority.sort(
-      (a, b) => PRIORITY_CODES.indexOf(a.code) - PRIORITY_CODES.indexOf(b.code),
+      (a, b) => priorityCodes.indexOf(a.code) - priorityCodes.indexOf(b.code),
     );
     rest.sort((a, b) => a.country.localeCompare(b.country));
 
@@ -372,6 +437,122 @@
   }
 
   // ============================================================
+  // Edit currency list: reorder / remove rows in the Converted table, and add
+  // new ones from a search box under it. Every change is saved straight away.
+  // ============================================================
+  function setEditing(on) {
+    state.editing = on;
+    els.output.classList.toggle("editing", on);
+    els.editActions.hidden = !on;
+    els.addCur.hidden = !on;
+    els.colCountry.textContent = on ? "" : "Country";
+    els.addSearch.value = "";
+    renderAddList();
+    render();
+  }
+
+  function removeCode(code) {
+    if (priorityCodes.length > 1) setPriority(priorityCodes.filter((c) => c !== code));
+  }
+
+  // Keyboard reorder from the drag handle: move one step up (-1) or down (+1).
+  function moveCode(code, step) {
+    const codes = [...priorityCodes];
+    const i = codes.indexOf(code);
+    const j = i + step;
+    if (i < 0 || j < 0 || j >= codes.length) return;
+    [codes[i], codes[j]] = [codes[j], codes[i]];
+    setPriority(codes);
+    // re-render replaced the handle; keep keyboard focus on the moved row
+    els.ratesBody.querySelector(`.grip[data-code="${code}"]`)?.focus();
+  }
+
+  // Drag to reorder: the row follows the pointer (mouse or touch) and swaps
+  // places with a neighbour once the pointer passes that neighbour's middle.
+  // The new order is saved on release.
+  const drag = { row: null, startY: 0 };
+
+  function onGripDown(e) {
+    const grip = e.target.closest(".grip");
+    if (!grip || e.button > 0) return;
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    drag.row = grip.closest("tr");
+    drag.startY = e.clientY;
+    drag.row.classList.add("dragging");
+  }
+
+  function onGripMove(e) {
+    const row = drag.row;
+    if (!row) return;
+    const y = e.clientY;
+    const next = row.nextElementSibling;
+    const prev = row.previousElementSibling;
+    if (next && y > midY(next)) {
+      next.after(row);
+      drag.startY += next.offsetHeight; // row's resting spot moved down
+    } else if (prev && y < midY(prev)) {
+      prev.before(row);
+      drag.startY -= prev.offsetHeight;
+    }
+    row.style.transform = `translateY(${y - drag.startY}px)`;
+  }
+
+  function onGripUp() {
+    const row = drag.row;
+    if (!row) return;
+    drag.row = null;
+    row.classList.remove("dragging");
+    row.style.transform = "";
+    const codes = [...els.ratesBody.querySelectorAll("tr[data-row]")].map((r) => r.dataset.row);
+    if (codes.join() !== priorityCodes.join()) setPriority(codes);
+  }
+
+  function midY(el) {
+    const r = el.getBoundingClientRect();
+    return r.top + r.height / 2;
+  }
+
+  // Matches for the "add currency" search, excluding ones already listed.
+  function addMatches() {
+    const q = els.addSearch.value.trim().toLowerCase();
+    if (!q) return [];
+    return availableCurrencies()
+      .filter((c) => !priorityCodes.includes(c.code) && matches(c, q))
+      .sort((a, b) => a.country.localeCompare(b.country));
+  }
+
+  function renderAddList() {
+    const found = addMatches();
+    if (!els.addSearch.value.trim()) {
+      els.addList.innerHTML = "";
+    } else if (!found.length) {
+      els.addList.innerHTML = `<li class="empty">No currency to add for “${els.addSearch.value.replace(/[<&]/g, "")}”.</li>`;
+    } else {
+      els.addList.innerHTML = found
+        .map(
+          (c) => `
+        <li class="option" data-code="${c.code}">
+          <span class="flag">${c.flag || ""}</span>
+          <span class="opt-main">
+            <span class="opt-code">${display(c)}</span>
+            <span class="opt-name">${c.name}</span>
+          </span>
+          <span class="opt-country">${c.country}</span>
+        </li>`,
+        )
+        .join("");
+    }
+  }
+
+  function addCurrency(code) {
+    if (!code || priorityCodes.includes(code)) return;
+    els.addSearch.value = "";
+    setPriority([...priorityCodes, code]);
+    els.addSearch.focus();
+  }
+
+  // ============================================================
   // Mobile scrub gesture: hold or drag vertically on the trigger to flick
   // through the high-precedence currencies (like TradingView's value scrubber).
   // A plain tap still opens the searchable dropdown.
@@ -395,7 +576,7 @@
   const SCRUB_COPIES = 3; // list is repeated this many times so the wheel loops
 
   function priorityIndexOf(code) {
-    const i = PRIORITY_CODES.indexOf(code);
+    const i = priorityCodes.indexOf(code);
     return i >= 0 ? i : 0;
   }
 
@@ -403,7 +584,7 @@
     if (scrub.el) return scrub.el;
     const el = document.createElement("div");
     el.className = "scrub";
-    const one = PRIORITY_CODES.map((code) => {
+    const one = priorityCodes.map((code) => {
       const meta = byCode.get(code) || { code, flag: "", country: "" };
       return `<div class="scrub-item" data-code="${code}">
           <span class="flag">${meta.flag || ""}</span>
@@ -442,7 +623,7 @@
   function activateScrub() {
     if (scrub.active) return;
     scrub.active = true;
-    const n = PRIORITY_CODES.length;
+    const n = priorityCodes.length;
     // start centered in the middle copy so the wheel has room to loop both ways
     scrub.basePos =
       priorityIndexOf(state.fromCode) + n * Math.floor(SCRUB_COPIES / 2);
@@ -494,7 +675,7 @@
     // keep within the rendered strip; currency wraps via modulo so it loops
     const pos = Math.min(
       Math.max(scrub.basePos + delta, 0),
-      PRIORITY_CODES.length * SCRUB_COPIES - 1,
+      priorityCodes.length * SCRUB_COPIES - 1,
     );
     if (pos !== scrub.curPos) {
       scrub.curPos = pos;
@@ -508,8 +689,8 @@
       e.preventDefault();
       // commit the picked currency now — one recalculation instead of per-swipe
       if (scrub.curPos !== scrub.basePos) {
-        const n = PRIORITY_CODES.length;
-        applyCurrency(PRIORITY_CODES[((scrub.curPos % n) + n) % n]);
+        const n = priorityCodes.length;
+        applyCurrency(priorityCodes[((scrub.curPos % n) + n) % n]);
       }
     }
     endScrub();
@@ -572,10 +753,52 @@
       if (li) selectCode(li.dataset.code);
     });
 
+    // Edit currency list (opened from the footer link).
+    els.editOpen.addEventListener("click", () => {
+      setEditing(true);
+      els.output.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    els.editDone.addEventListener("click", () => setEditing(false));
+    els.editReset.addEventListener("click", () => setPriority([...DEFAULT_PRIORITY]));
+    els.addSearch.addEventListener("input", renderAddList);
+    els.addSearch.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const first = addMatches()[0];
+        if (first) addCurrency(first.code);
+      } else if (e.key === "Escape") {
+        els.addSearch.value = "";
+        renderAddList();
+      }
+    });
+    els.addList.addEventListener("click", (e) => {
+      const li = e.target.closest(".option");
+      if (li) addCurrency(li.dataset.code);
+    });
+
+    // Drag handle: pointer drag, or ↑ / ↓ when focused.
+    els.ratesBody.addEventListener("pointerdown", onGripDown);
+    els.ratesBody.addEventListener("pointermove", onGripMove);
+    els.ratesBody.addEventListener("pointerup", onGripUp);
+    els.ratesBody.addEventListener("pointercancel", onGripUp);
+    els.ratesBody.addEventListener("keydown", (e) => {
+      const grip = e.target.closest(".grip");
+      if (!grip || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+      e.preventDefault();
+      moveCode(grip.dataset.code, e.key === "ArrowUp" ? -1 : 1);
+    });
+
     // Amount tooltips: click an abbreviated amount to reveal the exact number.
-    // Clicking a currency flag or code makes it the "from" currency (amount unchanged).
+    // Clicking a currency flag or code makes it the "from" currency (amount
+    // unchanged). In edit mode the row buttons remove / reorder instead.
     els.ratesBody.addEventListener("click", (e) => {
-      const pick = e.target.closest(".cur [data-code]");
+      const remove = e.target.closest('.edit-btn[data-act="remove"]');
+      if (remove) {
+        removeCode(remove.dataset.code);
+        return;
+      }
+      if (e.target.closest(".grip")) return;
+      const pick = !state.editing && e.target.closest(".cur [data-code]");
       if (pick) {
         if (pick.dataset.code !== state.fromCode) applyCurrency(pick.dataset.code);
         return;

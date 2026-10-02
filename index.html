@@ -81,30 +81,44 @@
         </section>
 
         <!-- ===================== OUTPUT ===================== -->
-        <section class="output">
+        <section class="output" id="output">
           <div class="output-head">
             <h2>Converted</h2>
             <div class="parsed" id="parsed-amount"></div>
+            <div class="edit-actions" id="edit-actions" hidden>
+              <button type="button" class="edit-link" id="edit-reset">Reset to default</button>
+              <button type="button" class="edit-done" id="edit-done">Done</button>
+            </div>
           </div>
           <table class="rates-table">
             <thead>
               <tr>
                 <th scope="col">Currency</th>
                 <th scope="col" class="num">Amount</th>
-                <th scope="col">Country</th>
+                <th scope="col" id="col-country">Country</th>
               </tr>
             </thead>
             <tbody id="rates-body"></tbody>
           </table>
+          <div class="add-currency" id="add-currency" hidden>
+            <input
+              type="text"
+              id="add-search"
+              class="add-search"
+              placeholder="＋ Add currency…"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Add currency"
+            />
+            <ul class="combobox-list add-list" id="add-list" aria-label="Currencies to add"></ul>
+          </div>
         </section>
       </main>
 
       <footer class="footer">
         <span id="updated">Loading exchange rates…</span>
         <span class="dot">·</span>
-        <span>Rates from
-          <a href="https://github.com/fawazahmed0/exchange-api" target="_blank" rel="noopener">currency-api</a>,
-          refreshed daily.</span>
+        <button type="button" class="footer-link" id="edit-open">Edit currency list</button>
       </footer>
     </div>
 
