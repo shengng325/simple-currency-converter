@@ -179,8 +179,10 @@
         <tr class="${isFrom ? "is-from" : ""}" data-row="${code}">
           <td class="cur">
             <div class="cur-inner">
-              <span class="flag" data-code="${code}">${meta.flag || ""}</span>
-              <span class="code" data-code="${code}">${display(meta)}</span>
+              <span class="cur-pick" data-code="${code}">
+                <span class="flag">${meta.flag || ""}</span>
+                <span class="code">${display(meta)}</span>
+              </span>
               ${isFrom ? '<span class="badge">from</span>' : ""}
             </div>
           </td>

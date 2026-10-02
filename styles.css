@@ -469,6 +469,22 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
+  height: 100%; /* fills the cell thanks to the 1px-height trick below */
+}
+/* Flag + code: the click target for switching currency. Its vertical padding
+   replaces the cell's, so the target spans the full row height while staying
+   only as wide as the flag and code. */
+.rates-table td.cur {
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 1px; /* lets .cur-inner use height: 100% of the row */
+}
+.cur-pick {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  align-self: stretch;
+  padding: 12px 0;
 }
 .cur .code {
   font-weight: 700;
